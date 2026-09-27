@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>计算机科学与技术1-2班 · 课堂打卡</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #ffffff; color: #333333; font-family: -apple-system, 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 60px 24px; letter-spacing: 0.5px; }
+  .tag { font-size: 12px; color: #999999; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
+  h1 { font-size: 48px; font-weight: 300; letter-spacing: 8px; margin-bottom: 12px; text-align: center; line-height: 1.2; color: #222222; }
+  .date { font-size: 14px; color: #888888; letter-spacing: 2px; margin-bottom: 48px; }
+  .status { font-size: 13px; letter-spacing: 1px; margin-bottom: 40px; padding: 10px 24px; border-radius: 100px; border: 1px solid #eeeeee; background: #fafafa; }
+  .status.ok { color: #7b9e6b; border-color: #d4e2c6; background: #f1f6eb; }
+  .status.no { color: #c97b7b; border-color: #f0d0d0; background: #fdf2f2; }
+  .card { background: #ffffff; border: 1px solid #f0f0f0; border-radius: 24px; padding: 48px 40px; width: 100%; max-width: 460px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
+  select { width: 100%; padding: 16px 20px; background: #fafafa; color: #333; border: 1px solid #eeeeee; border-radius: 12px; font-size: 15px; letter-spacing: 1px; margin-bottom: 28px; outline: none; appearance: none; cursor: pointer; transition: all 0.3s; }
+  select:focus { border-color: #f5c6c3; background: #ffffff; }
+  .btn-row { display: flex; gap: 16px; }
+  .btn { flex: 1; padding: 24px 12px; border: 1px solid transparent; border-radius: 18px; font-size: 15px; letter-spacing: 2px; cursor: pointer; transition: all 0.3s ease; font-weight: 500; }
+  .btn-first { background: #f0a8a0; color: #6a1a1a; border-color: #e09088; }
+  .btn-first:hover:not(:disabled) { background: #e89890; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(106,26,26,0.15); }
+  .btn-first.done { background: #b8d4a8; color: #1a4a1a; border-color: #a0c490; }
+  .btn-answer { background: #f5d78e; color: #6a5a1a; border-color: #e8c878; }
+  .btn-answer:hover:not(:disabled) { background: #e8c878; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(106,90,26,0.15); }
+  .btn:disabled { background: #f7f7f7; color: #cccccc; border-color: #f0f0f0; cursor: not-allowed; transform: none !important; }
+  .num-row { display: flex; gap: 14px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+  .num-btn { width: 64px; height: 64px; border-radius: 20px; border: none; font-size: 22px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .num-btn:hover { transform: scale(1.1); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+  .n1 { background: #FFF4C2 !important; color: #8a7a2a !important; }
+  .n2 { background: #D6EDFF !important; color: #2a5a8a !important; }
+  .n3 { background: #FFD6D6 !important; color: #8a3a3a !important; }
+  .n4 { background: #D9F2D9 !important; color: #3a7a3a !important; }
+  .n5 { background: #FFE4C2 !important; color: #8a5a2a !important; }
+  .msg { margin-top: 24px; text-align: center; font-size: 14px; letter-spacing: 1px; min-height: 24px; color: #888888; }
+  .msg.success { color: #7b9e6b; }
+  .msg.error { color: #c97b7b; }
+  .count-box { margin-top: 16px; text-align: center; font-size: 13px; color: #999; letter-spacing: 1px; }
+  .count-box span { color: #8a7a4a; font-weight: 600; }
+  .stats-link { margin-top: 48px; color: #bbbbbb; cursor: pointer; font-size: 12px; letter-spacing: 2px; transition: color 0.3s; }
+  .stats-link:hover { color: #666666; }
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
+  .modal.show { display: flex; }
+  .modal-box { background: #ffffff; border: 1px solid #f0f0f0; border-radius: 24px; padding: 48px; width: 100%; max-width: 560px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.08); text-align: center; }
+  .modal-box h2 { font-size: 20px; font-weight: 400; letter-spacing: 4px; margin-bottom: 8px; color: #333; }
+  .modal-box .tip { font-size: 13px; color: #c97b7b; letter-spacing: 1px; margin-bottom: 20px; }
+  .modal-box input { width: 100%; padding: 16px 20px; background: #fafafa; color: #333; border: 1px solid #eeeeee; border-radius: 12px; margin-bottom: 20px; font-size: 15px; outline: none; transition: all 0.3s; }
+  .modal-box input:focus { border-color: #f5c6c3; background: #fff; }
+  .modal-box button { padding: 14px 32px; background: #f0a8a0; color: #6a1a1a; border: none; border-radius: 12px; font-size: 14px; letter-spacing: 2px; cursor: pointer; margin-right: 10px; transition: all 0.3s; }
+  .modal-box button:hover { background: #e89890; }
+  .modal-box button.cancel { background: #f0f0f0; color: #888; }
+  .modal-box button.cancel:hover { background: #e0e0e0; color: #333; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { padding: 18px 12px; border-bottom: 1px solid #f5f5f5; text-align: left; font-size: 14px; font-weight: 400; letter-spacing: 1px; }
+  th { color: #999999; font-size: 12px; letter-spacing: 2px; border-bottom: 1px solid #eeeeee; }
+  .total { color: #6a1a1a; font-weight: 600; }
+  .close { float: right; color: #cccccc; cursor: pointer; font-size: 24px; line-height: 1; transition: color 0.3s; }
+  .close:hover { color: #666; }
+</style>
+</head>
+<body>
+
+<div class="tag">Computer Science</div>
+<h1>课堂打卡</h1>
+<div class="date" id="today"></div>
+<div class="status" id="status"></div>
+
+<div class="card">
+  <select id="nameSelect" onchange="updateCount()">
+    <option value="">—
